@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const RegisteredUser = require("./models/registeredUser");
+const OrderDetail = require("./models/savedorderDetails");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -114,6 +115,47 @@ app.post("/login", async (req, res) => {
     console.log(error, error.message);
   }
 });
+
+app.post("/orderDetails", async (req, res) => {
+  console.log(req.body);
+  const {
+    email,
+    pickupLocation,
+    dropoffLocation,
+    expectedDateOfDelivery,
+    goodsType,
+    goodsweight,
+    goodsSize,
+    vehicalSize,
+    vehicalBodyType,
+    paymentMode,
+    paymentStatus,
+    paymentVia,
+    orderStatus,
+    orderDate,
+    orderTime,
+  } = req.body;
+  const orderDetails = new OrderDetail({
+    email,
+    pickupLocation,
+    dropoffLocation,
+    expectedDateOfDelivery,
+    goodsType,
+    goodsweight,
+    goodsSize,
+    vehicalSize,
+    vehicalBodyType,
+    paymentMode,
+    paymentStatus,
+    paymentVia,
+    orderStatus,
+    orderDate,
+    orderTime,
+  });
+  const savedOrderDetails = await orderDetails.save();
+  res.status(200).json(savedOrderDetails);
+});
+
 app.listen(4000, () => {
   console.log("Server started at port 4000");
 });
