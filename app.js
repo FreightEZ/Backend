@@ -156,6 +156,17 @@ app.post("/orderDetails", async (req, res) => {
   res.status(200).json(savedOrderDetails);
 });
 
+app.post("/getOrderDetails", async (req, res) => {
+  console.log(req.body);
+  const { email } = req.body;
+  const orderExits = await OrderDetail.find({});
+  if (orderExits) {
+    res.status(200).json(orderExits);
+  } else {
+    res.status(422).json("order not found");
+  }
+});
+
 app.listen(4000, () => {
   console.log("Server started at port 4000");
 });
