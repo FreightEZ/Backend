@@ -9,6 +9,7 @@ const registeredUserSchema = new Schema({
   phoneNumber: { type: String, unique: true },
   companyAddress: String,
   password: String,
+  aboutCompany: String,
 });
 
 // Model is a class with which we construct documents. CURD operations beacome easy to perform

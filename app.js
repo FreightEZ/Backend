@@ -15,9 +15,10 @@ const bcryptSalt = bcrypt.genSaltSync(10);
 const jwtSecure = "kjqnfburr3iqefbewifbw";
 // use to parse json
 const app = express();
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "http://localhost:8080"],
     credentials: true,
   })
 );
@@ -117,53 +118,166 @@ app.post("/login", async (req, res) => {
 });
 
 app.post("/orderDetails", async (req, res) => {
-  console.log(req.body);
-  const {
-    email,
-    pickupLocation,
-    dropoffLocation,
-    expectedDateOfDelivery,
-    goodsType,
-    goodsweight,
-    goodsSize,
-    vehicalSize,
-    vehicalBodyType,
-    paymentMode,
-    paymentStatus,
-    paymentVia,
-    orderStatus,
-    orderDate,
-    orderTime,
-  } = req.body;
-  const orderDetails = new OrderDetail({
-    email,
-    pickupLocation,
-    dropoffLocation,
-    expectedDateOfDelivery,
-    goodsType,
-    goodsweight,
-    goodsSize,
-    vehicalSize,
-    vehicalBodyType,
-    paymentMode,
-    paymentStatus,
-    paymentVia,
-    orderStatus,
-    orderDate,
-    orderTime,
-  });
-  const savedOrderDetails = await orderDetails.save();
-  res.status(200).json(savedOrderDetails);
+  try {
+    // Extract the order data from the request body
+    const orderData = req.body;
+
+    // Create a new order document in the database
+    const order = await OrderDetail.create(orderData);
+
+    // Return the created order as a response
+    res.status(201).json(order);
+  } catch (error) {
+    // Handle any error that occurs while creating the order
+    console.error("Failed to create order:", error);
+    // Return a 500 status code with an error message
+    res.status(500).json({ message: "Failed to create order" });
+  }
 });
 
-app.post("/getOrderDetails", async (req, res) => {
+app.post("/getPendingOrderDetails", async (req, res) => {
+  // Extract the email from request body
+  const { email } = req.body;
+
+  try {
+    // Find order details for the given email in the database
+    const orderDetails = await OrderDetail.find({
+      email,
+      orderStatus: "Pending",
+    });
+
+    if (orderDetails.length > 0) {
+      // Return the order details as a response
+      res.status(200).json(orderDetails);
+    } else {
+      // Return a 404 status code with an appropriate message if no orders are found
+      res.status(404).json({ message: "No orders found for the given email" });
+    }
+  } catch (error) {
+    // Handle any error that occurs while fetching order details
+    console.error(error);
+    // Return a 500 status code with an error message
+    res.status(500).json({ message: "Failed to fetch order details" });
+  }
+});
+app.post("/getPreviousOrderDetails", async (req, res) => {
+  // Extract the email from request body
+  const { email } = req.body;
+
+  try {
+    // Find order details for the given email in the database
+    const orderDetails = await OrderDetail.find({
+      email,
+      orderStatus: "Completed",
+    });
+
+    if (orderDetails.length > 0) {
+      // Return the order details as a response
+      res.status(200).json(orderDetails);
+    } else {
+      // Return a 404 status code with an appropriate message if no orders are found
+      res.status(404).json({ message: "No orders found" });
+    }
+  } catch (error) {
+    // Handle any error that occurs while fetching order details
+    console.error(error);
+    // Return a 500 status code with an error message
+    res.status(500).json({ message: "Failed to fetch order details" });
+  }
+});
+
+// DELETE route to delete an order by ID
+app.delete("/order/:orderId", async (req, res) => {
+  const orderId = req.params.orderId;
+
+  try {
+    // Find the order by ID and remove it
+    const deletedOrder = await OrderDetail.findByIdAndRemove(orderId);
+
+    if (deletedOrder) {
+      // If order found and deleted, return success response
+      return res.status(200).json({ message: "Order deleted successfully" });
+    } else {
+      // If order not found, return error response
+      return res.status(404).json({ message: "Order not found" });
+    }
+  } catch (error) {
+    // If error occurred, return error response
+    return res.status(500).json({ message: "Failed to delete order", error });
+  }
+});
+
+app.post("/getOngoingOrderDetails", async (req, res) => {
+  // Extract the email from request body
+  const { email } = req.body;
+
+  try {
+    // Find order details for the given email in the database
+    const orderDetails = await OrderDetail.find({
+      email,
+      orderStatus: "Ongoing",
+    });
+
+    if (orderDetails.length > 0) {
+      // Return the order details as a response
+      res.status(200).json(orderDetails);
+    } else {
+      // Return a 404 status code with an appropriate message if no orders are found
+      res.status(404).json({ message: "No orders found for the given email" });
+    }
+  } catch (error) {
+    // Handle any error that occurs while fetching order details
+    console.error(error);
+    // Return a 500 status code with an error message
+    res.status(500).json({ message: "Failed to fetch order details" });
+  }
+});
+
+app.post("/getProfileDetail", async (req, res) => {
   console.log(req.body);
   const { email } = req.body;
-  const orderExits = await OrderDetail.find({});
-  if (orderExits) {
-    res.status(200).json(orderExits);
+  const profile = await RegisteredUser.findOne({ email }, { password: 0 }); // Exclude password field from the query
+  if (profile) {
+    res.status(200).json(profile);
   } else {
-    res.status(422).json("order not found");
+    res.status(422).json("Profile not found");
+  }
+});
+
+// Define PUT route for updating profile details
+app.put("/updateProfileDetail/:email", async (req, res) => {
+  try {
+    // Extract the email from request parameters
+    const email = req.params.email;
+
+    // Extract the updated data from request body
+    const { fullName, companyName, phoneNumber, companyAddress, aboutCompany } =
+      req.body;
+
+    // Perform the update operation using the provided data
+    const update = await RegisteredUser.findOneAndUpdate(
+      { email }, // Find user by email
+      {
+        fullName,
+        companyName,
+        phoneNumber,
+        companyAddress,
+        aboutCompany,
+      }, // Update the fields with provided data
+      { new: true } // Return the updated user object
+    );
+
+    if (update) {
+      // If update is successful, send response with updated user object
+      res.status(200).json("Profile successfully updated");
+    } else {
+      // If user not found, send response with error message
+      res.status(422).json({ error: "Profile not found" });
+    }
+  } catch (error) {
+    // Handle any errors that may occur during the update operation
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
