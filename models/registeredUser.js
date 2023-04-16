@@ -5,11 +5,11 @@ const Schema = mongoose.Schema;
 const registeredUserSchema = new Schema({
   fullName: String,
   companyName: String,
+  aboutCompany: String,
   email: { type: String, unique: true },
   phoneNumber: { type: String, unique: true },
   companyAddress: String,
   password: String,
-  aboutCompany: String,
 });
 
 // Model is a class with which we construct documents. CURD operations beacome easy to perform

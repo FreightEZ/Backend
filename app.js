@@ -6,6 +6,7 @@ const OrderDetail = require("./models/savedorderDetails");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const cookieparser = require("cookie-parser");
 bodyParser = require("body-parser");
 const url =
   "mongodb+srv://therohansharma3:Gq0rJmKip6wV2RYn@dev.vbq2sov.mongodb.net/FreightEZ?retryWrites=true&w=majority";
@@ -15,26 +16,24 @@ const bcryptSalt = bcrypt.genSaltSync(10);
 const jwtSecure = "kjqnfburr3iqefbewifbw";
 // use to parse json
 const app = express();
-
+app.use(cookieparser());
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:8080"],
+    // origin: "http://192.168.1.8:8080",
+    origin: "http://localhost:5173",
+    // origin: "http://localhost:4173",
+    // origin: [
+    //   "http://localhost:5173",
+    //   "http://localhost:8080",
+    //   "http:192.168.188.230:8080",
+    // ],
+    methods: ["GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH"],
     credentials: true,
   })
 );
-// // parse application/json
-// app.use(bodyParser.json());
-// // parse application/x-www-form-urlencoded
-// app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.json());
 
-// app.use(
-//   cors({
-//     // credentials: true,
-//     // app can able to communicate with it (client) i.e what kind of app can commnicate with our a.
-//     origin: "*",
-//   })
-// );
+app.use(express.json());
+app.use(bodyParser.json());
 
 mongoose
   .connect(url)
@@ -53,23 +52,27 @@ app.get("/test", (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
+  // res.header("Access-Control-Allow-Origin", "http://192.168.1.8:8080");
+  // res.header("Access-Control-Allow-Headers", "http://192.168.1.8:8080");
+  // res.header("Access-Control-Allow-Credentials", "true");
   console.log("POST /register");
-  console.log(req.body);
+
   const {
     fullName,
     companyName,
+    aboutCompany,
     email,
     phoneNumber,
     companyAddress,
     password,
   } = req.body; // Update destructuring assignment
-
   // try catch use to avoid duplicate email address.
   try {
     const hashedPassword = bcrypt.hashSync(password, bcryptSalt); // Hash the password
     const registeredUser = new RegisteredUser({
       fullName,
       companyName,
+      aboutCompany,
       email,
       phoneNumber,
       companyAddress,
@@ -78,18 +81,23 @@ app.post("/register", async (req, res) => {
 
     const savedUser = await registeredUser.save(); // Save the user to the database
     console.log(savedUser);
-    res.status(200).json(savedUser);
+    res.status(200).json("Registred Succesfully! please login to continue");
   } catch (err) {
-    res.status(422).json(err);
+    res.status(422).json("user already exit");
   }
 });
 
 app.post("/login", async (req, res) => {
+  // res.header("Access-Control-Allow-Origin", "http://192.168.1.8:8080");
+  // res.header("Access-Control-Allow-Headers", "http://192.168.1.8:8080");
+  // res.header("Access-Control-Allow-Credentials", "true");
   try {
     console.log("POST /login");
-    console.log(req.body);
+
     const { email, password } = req.body;
+    console.log("POST /login", req.body);
     const registeredUser = await RegisteredUser.findOne({ email });
+    console.log("POST /login", registeredUser);
     if (registeredUser) {
       const passwordOk = bcrypt.compareSync(password, registeredUser.password);
       if (passwordOk) {
@@ -101,13 +109,14 @@ app.post("/login", async (req, res) => {
             if (err) {
               throw err;
             } else {
-              res.cookie("token", token).json("pass ok");
+              res.cookie("token", token).json("logged in successfully");
             }
           }
         );
       } else {
         res.status(422).json("Login failed, password not matched");
       }
+      console.log("Done");
     } else {
       // throw err;
       res.json("user not found");
@@ -117,7 +126,39 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// app.get("/profile", (req, res) => {
+//   res.header("Access-Control-Allow-Origin", "*");
+//   const cookie = req.cookies;
+//   const token = cookie.token;
+//   console.log(token);
+//   if (token) {
+//     jwt.verify(token, jwtSecure, {}, async (err, userData) => {
+//       if (err) {
+//         res.status(401).json("Invalid token");
+//       } else {
+//         const {
+//           fullName,
+//           companyName,
+//           aboutCompany,
+//           email,
+//           phoneNumber,
+//           companyAddress,
+//         } = await RegisteredUser.findById(userData.id);
+//         res.json({
+//           fullName,
+//           companyName,
+//           aboutCompany,
+//           email,
+//           phoneNumber,
+//           companyAddress,
+//         });
+//       }
+//     });
+//   }
+// });
+
 app.post("/orderDetails", async (req, res) => {
+  // res.header("Access-Control-Allow-Origin", "*");
   try {
     // Extract the order data from the request body
     const orderData = req.body;
@@ -136,6 +177,7 @@ app.post("/orderDetails", async (req, res) => {
 });
 
 app.post("/getPendingOrderDetails", async (req, res) => {
+  // res.header("Access-Control-Allow-Origin", "*");
   // Extract the email from request body
   const { email } = req.body;
 
@@ -161,6 +203,7 @@ app.post("/getPendingOrderDetails", async (req, res) => {
   }
 });
 app.post("/getPreviousOrderDetails", async (req, res) => {
+  // res.header("Access-Control-Allow-Origin", "*");
   // Extract the email from request body
   const { email } = req.body;
 
