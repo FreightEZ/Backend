@@ -12,7 +12,7 @@ const registeredUserSchema = new Schema({
   password: String,
 });
 
-// Model is a class with which we construct documents. CURD operations beacome easy to perform
+// Model is a className with which we construct documents. CURD operations beacome easy to perform
 // Collection creation is done by MODEL
 const RegistredUserModel = mongoose.model(
   "RegistredUser", // Deafult "s" is added to the name of colletion

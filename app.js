@@ -119,7 +119,7 @@ app.post("/login", async (req, res) => {
       console.log("Done");
     } else {
       // throw err;
-      res.json("user not found");
+      res.status(404).json("user not found");
     }
   } catch (error) {
     console.log(error, error.message);
